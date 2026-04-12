@@ -1,6 +1,6 @@
 import './App.css'
 import CodeEditor from './Editor'
-import {useState}
+import {useState} from 'react'
 
 function App() {
   
