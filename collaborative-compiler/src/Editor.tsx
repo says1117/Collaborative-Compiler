@@ -22,8 +22,16 @@ export default function CodeEditor(){
       const text = event.data instanceof Blob
       ? await event.data.text()
       : event.data
-      isRemoteUpdate.current = true
-      setCode(text)
+      //gets the message from text and parses it to JSON
+      const message = JSON.parse(text)
+      //checks what type of message it is. if its code, then its updated for all in the editor
+      if(message.type === "code"){
+// Guards against infinite loop: without this, setCode() would trigger onChange,
+// which would re-send the message back to the server, which would broadcast again, etc.
+//meaning infinite broadcasts of the same message back and forth between clients and server
+        isRemoteUpdate.current = true
+        setCode(message.content)
+      }
     }
 
     return () => {
@@ -58,7 +66,7 @@ export default function CodeEditor(){
                         return
                     }
                     if(socketRef.current?.readyState === 1){
-                        socketRef.current.send(value ?? "")
+                        socketRef.current.send(JSON.stringify({type: "code", content: value ?? ""}))
                     }
                     setCode(value ?? "")
                 }
