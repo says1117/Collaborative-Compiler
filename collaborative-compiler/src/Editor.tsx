@@ -1,5 +1,6 @@
 import Editor from "@monaco-editor/react"
 import { useState, useRef, useEffect } from 'react'
+import type { editor } from 'monaco-editor'
 
 
 export default function CodeEditor(){
@@ -8,7 +9,15 @@ export default function CodeEditor(){
     const socketRef = useRef<WebSocket | null>(null)
     
     const [code, setCode] = useState("//placeholder")
+    //useRef stops value from being reset on re-render. makes something similar to a static local variable
+    //random ID persists through re-renders, but generated differently for each client
+    const userId = useRef(crypto.randomUUID())
     const isRemoteUpdate = useRef(false)
+
+    //holds monaco editor instance
+    //starts as null because it doesnt exist yet, gets created after component mounts
+    //IStandaloneCodeEditor is the type of the editor instance
+    const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null)
 
     useEffect(() => {
 
@@ -28,7 +37,7 @@ export default function CodeEditor(){
       if(message.type === "code"){
 // Guards against infinite loop: without this, setCode() would trigger onChange,
 // which would re-send the message back to the server, which would broadcast again, etc.
-//meaning infinite broadcasts of the same message back and forth between clients and server
+//meaning infinite broadcasts of the same message back and forth between client and server
         isRemoteUpdate.current = true
         setCode(message.content)
       }
@@ -53,13 +62,23 @@ export default function CodeEditor(){
             {/* if its on vs-dark, change to light on click, otherwise opposite. */}
             <button onClick = {() => setTheme(isDarkNow === "vs-dark" ? "light" : "vs-dark")}>ToggleTheme</button>
             <Editor
+
                 height = "90vh"
                 defaultLanguage = "javascript"
                 defaultValue ="//placeholder"
                 //sets theme to initialized vs-dark
                 theme = {isDarkNow}
                 value = {code}
-
+                //called after rendering editor for the first time
+                onMount={(editor) => {
+                    editorRef.current = editor
+                    //registers listener to detect cursor position changes
+                    editorRef.current.onDidChangeCursorPosition((e) =>{
+                        console.log(e.position.lineNumber)
+                        console.log(e.position.column)
+                    })
+                }
+            }
                 onChange = {(value) => {
                     if(isRemoteUpdate.current){
                         isRemoteUpdate.current = false
