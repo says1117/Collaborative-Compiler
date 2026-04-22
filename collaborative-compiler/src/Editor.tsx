@@ -9,6 +9,9 @@ export default function CodeEditor(){
     const socketRef = useRef<WebSocket | null>(null)
     
     const [code, setCode] = useState("//placeholder")
+
+    //an object where keys strings and values are {line, column} objects
+    const [cursors, setCursors] = useState<Record<string, {line: number, column: number} >> ({})
     //useRef stops value from being reset on re-render. makes something similar to a static local variable
     //random ID persists through re-renders, but generated differently for each client
     const userId = useRef(crypto.randomUUID())
@@ -41,7 +44,19 @@ export default function CodeEditor(){
         isRemoteUpdate.current = true
         setCode(message.content)
       }
-    }
+      else if(message.type === "cursor"){
+
+        //can test cursors updating by logging each time a cursor message is received
+        console.log(cursors)
+        //updates state based on what it was before
+        //existing cursors object
+        setCursors(prev => ({
+            //speads existing cursors entries into new object
+            ...prev,
+            //adds new entry on top of this
+            [message.userId]: {line: message.line, column: message.column}
+      }))
+    }}
 
     return () => {
     //when component unmounts. cleanup
@@ -74,8 +89,11 @@ export default function CodeEditor(){
                     editorRef.current = editor
                     //registers listener to detect cursor position changes
                     editorRef.current.onDidChangeCursorPosition((e) =>{
-                        console.log(e.position.lineNumber)
-                        console.log(e.position.column)
+
+                            if(socketRef.current?.readyState === 1){
+                            //sends JSON string with cursor, userId, line, and column to server whenever cursor position changes
+                            socketRef.current?.send(JSON.stringify({type:"cursor", userId: userId.current, line: e.position.lineNumber, column: e.position.column}))
+                        }
                     })
                 }
             }
