@@ -1,6 +1,7 @@
 import Editor from "@monaco-editor/react"
 import { useState, useRef, useEffect } from 'react'
-import { editor } from 'monaco-editor'
+import type { editor } from 'monaco-editor'
+import * as monaco from 'monaco-editor'
 
 
 export default function CodeEditor(){
@@ -22,6 +23,29 @@ export default function CodeEditor(){
     //starts as null because it doesnt exist yet, gets created after component mounts
     //IStandaloneCodeEditor is the type of the editor instance
     const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null)
+
+    //holds decorations collection for editor. this is how we display other users cursors
+    const decorationsRef = useRef<editor.IEditorDecorationsCollection | null>(null)
+
+    //everytime cursors state is updated, this runs
+    useEffect(() => {
+        //checks if both exists
+        if(editorRef.current && decorationsRef.current){
+
+            //need this all explained tmr
+            decorationsRef.current.set(Object.entries(cursors).map(([userId, {line, column}]) => {
+                return {
+                    range: new monaco.Range(line, column, line, column),
+                    options: {className: 'remote-cursor'}
+                }
+            }))
+                            
+        }
+                        
+
+
+    //loops over each entry in cursors object and creates a decoration for each one
+    }, [cursors])
 
     useEffect(() => {
 
@@ -90,9 +114,8 @@ export default function CodeEditor(){
                     editorRef.current = editor
                     //creates decoration cllections. how the users cursors are displayed.
                     //[] because it begins as empty
-                    const decorations = editor.createDecorationsCollection([])
+                    decorationsRef.current = editor.createDecorationsCollection([])
 
-                    
                     //registers listener to detect cursor position changes
                     editorRef.current.onDidChangeCursorPosition((e) =>{
 

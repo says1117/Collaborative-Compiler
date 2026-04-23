@@ -109,3 +109,11 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+
+.remote-cursor {
+  /*current implementation is a red line for everyone.
+  ideally will be different color + nametag for all 
+  also will be blinking, hopefully*/
+  border-left: 1px solid red;
+
+}
