@@ -1,6 +1,6 @@
 import Editor from "@monaco-editor/react"
 import { useState, useRef, useEffect } from 'react'
-import type { editor } from 'monaco-editor'
+import { editor } from 'monaco-editor'
 
 
 export default function CodeEditor(){
@@ -16,6 +16,7 @@ export default function CodeEditor(){
     //random ID persists through re-renders, but generated differently for each client
     const userId = useRef(crypto.randomUUID())
     const isRemoteUpdate = useRef(false)
+
 
     //holds monaco editor instance
     //starts as null because it doesnt exist yet, gets created after component mounts
@@ -47,7 +48,7 @@ export default function CodeEditor(){
       else if(message.type === "cursor"){
 
         //can test cursors updating by logging each time a cursor message is received
-        console.log(cursors)
+        //console.log(cursors)
         //updates state based on what it was before
         //existing cursors object
         setCursors(prev => ({
@@ -77,7 +78,7 @@ export default function CodeEditor(){
             {/* if its on vs-dark, change to light on click, otherwise opposite. */}
             <button onClick = {() => setTheme(isDarkNow === "vs-dark" ? "light" : "vs-dark")}>ToggleTheme</button>
             <Editor
-
+                
                 height = "90vh"
                 defaultLanguage = "javascript"
                 defaultValue ="//placeholder"
@@ -87,6 +88,11 @@ export default function CodeEditor(){
                 //called after rendering editor for the first time
                 onMount={(editor) => {
                     editorRef.current = editor
+                    //creates decoration cllections. how the users cursors are displayed.
+                    //[] because it begins as empty
+                    const decorations = editor.createDecorationsCollection([])
+
+                    
                     //registers listener to detect cursor position changes
                     editorRef.current.onDidChangeCursorPosition((e) =>{
 
